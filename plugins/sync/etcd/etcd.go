@@ -107,12 +107,6 @@ func (e *etcdSync) Lock(id string, opts ...sync.LockOption) error {
 	if options.TTL > 0 {
 		sopts = append(sopts, cc.WithTTL(int(options.TTL.Seconds())))
 	}
-	lockCtx := context.Background()
-	if options.Wait > 0 {
-		var cancel context.CancelFunc
-		lockCtx, cancel = context.WithTimeout(lockCtx, options.Wait)
-		defer cancel()
-	}
 
 	s, err := cc.NewSession(e.client, sopts...)
 	if err != nil {
@@ -121,6 +115,12 @@ func (e *etcdSync) Lock(id string, opts ...sync.LockOption) error {
 
 	m := cc.NewMutex(s, path)
 
+	lockCtx := context.Background()
+	if options.Wait > 0 {
+		var cancel context.CancelFunc
+		lockCtx, cancel = context.WithTimeout(lockCtx, options.Wait)
+		defer cancel()
+	}
 	if err := m.Lock(lockCtx); err != nil {
 		return err
 	}
